@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="estilo.css">
+
+</head>
+<body>
+    <section>
+        <h1>Chat Node.js</h1>
+       
+        
+        <ul id="mensagens"></ul>
+
+        <form method="post" id="form">
+            <input type="text" id="msg" placeholder="Escreva seu nickName" />
+            <button type="submit" >Enviar</button>
+        </form>
+        
+        <div id="status"></div>
+        <button type="button" id="btnSair">sair</button>
+    </section>
+    <script>
+        // window.onload
+        $(function(){
+            const socket = io();//cria um socket pro cliente com o servidor  
+            let nickName = "";
+            
+            //document.getElementById("form").onclick=function()
+            $ ("#form").submit(function(){
+                
+                $("#btnSair").click(()=>{
+                    socket.emit("saiu", nickName);
+                    $("#mensagens").append($("<li>").text("Voce saiu!!"));
+                    $("#msg").attr("placeholder",`Voce está desconectado!`);
+                    $("#msg").attr("readonly", true);
+                    $("#btnSair").attr("disabled", true);
+                    socket.disconnect();
+                    
+                })
+                    
+                
+                $("#msg").focus() ;
+                if(nickName ==""){
+                    //nickName = document.getElementById("msg").value
+                    nickName =  $("#msg").val() ;
+                    socket.emit("usuario", nickName );//emite uma mensagem pro servidor
+                     
+                    // $("#msg").keydown(function(){
+                    //     console.log("status", nickName + " está digitando...");
+                    //     socket.emit("status", nickName + " está digitando...");
+                    // });
+                    $("#msg").attr("placeholder",`Escreva uma mensagem ${nickName}`);
+                    $("#msg").val("") ;
+                }else{
+                    socket.emit("chat msg", $("#msg").val());//vai enviar uma msg do cliente para o servidor
+                    $("#msg").val("") ;
+                }
+                
+                return false;//serve para parar com as requisições http que recarregam a página
+            });
+
+            socket.on("usuario", function(nickName){
+                $("#mensagens").append($("<li>").text(nickName+" conectado!"))
+                    //aqui o cliente pega a mensgaem enviada pelo servidor e imprime no html
+            });
+
+            socket.on("saiu", (nickName)=>{
+                $("#mensagens").append($("<li>").text(nickName+ " saiu!!"));
+            });
+
+            socket.on("chat msg", function(msg){
+                $("#mensagens").append($("<li>").text(msg))
+                    //aqui o cliente pega a mensgaem enviada pelo servidor e imprime no html
+            });
+
+            socket.on("status", function(msg){
+                $("#status").html(msg);
+            });
+
+            
+        })
+    </script>
+</body>
+</html>
